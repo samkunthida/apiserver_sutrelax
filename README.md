@@ -9,7 +9,7 @@ API server for SUTRelax Application
 - [ ] Posts
 - [ ] Comments
 
-### To setup the server
+### To setup project
 ```
 npm i install
 ```
