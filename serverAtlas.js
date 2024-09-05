@@ -3,11 +3,22 @@ const app = express();
 const cors = require('cors');
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const jwt = require('jsonwebtoken');
+
+//const crypto = require('crypto');
 
 app.use(express.json());
 app.use(cors());
 
+// sensitive data
 const mongoUrl = "mongodb+srv://kunthidakk:vhnlEtm7f1bATZiS@sutrelaxdb.mzomu.mongodb.net/?retryWrites=true&w=majority&appName=sutrelaxdb"
+
+// sensitive data
+const JWT_SECRET = "9b7cca92093cee49f51adf17cd0a63d43113bb7aba952cb65f526e263424ebd416893213627c19d150f9f2ed88331e4253f69083e0ae91c9e6feec2ce2ce9bf7";
+
+// [In case] For randomly generate JWT_SECRET
+// const JWT_SECRET_GENERATE = crypto.randomBytes(64).toString('hex');
+// console.log(JWT_SECRET_GENERATE);
 
 mongoose
     .connect(mongoUrl)
@@ -26,7 +37,6 @@ const UserLogin = mongoose.model("UserLogin"); // UserLogin Collection
 const User = mongoose.model("User"); // UserDetail Collection
 
 // GET POST
-
 app.get("/", (req, res)=>{
         res.send({status: "Started"})
 })
@@ -61,18 +71,60 @@ app.post('/registerUser', async(req, res)=>{
             password: encryptedPassword,
             role: "user",
         });
-        res.send({status: "ok", data: "User Created!!!"})
+        res.send({status: "ok", data: "User Created!"})
 
     }catch(error){
         res.send({ status: "error", data: error });
     }
 })
 
-// GET Articles
-app.get('/articles', async(req, res)=>{
+//POST Login
+app.post("/loginUser", async(req,res)=>{
+    const {email, password} = req.body;
+    const oldUser = await UserLogin.findOne({email: email});
 
+    if(!oldUser){
+        return res.send({data: "User doesn't exist!"});
+    }
+
+    if(await bcrypt.compare(password, oldUser.password)){
+        const token = jwt.sign({email:oldUser.email}, JWT_SECRET);
+
+        if(res.status(201)){
+            return res.send({ status:"ok", data: token });
+        }else{
+            return res.send({ error: "error" })
+        }
+    }
+});
+
+app.post("/userData", async(req,res)=>{
+    const {token} = req.body;
+    try {
+        const user = jwt.verify(token,JWT_SECRET)
+        const userEmail = user.email;
+
+        const userLogin = await UserLogin.findOne({email: userEmail});
+        if (!userLogin) {
+            return res.send({ status:"error", data: "User not found"})
+        }
+
+        const userDetail = await User.findOne({ _id: userLogin.userID });
+        if (!userDetail) {
+            return res.send({ status:"error", data: "User details not found"})
+        }
+
+        return res.send({ status: "Ok", data: userDetail });
+
+        // User.findOne({email:userEmail}).then(data=>{
+        //     return res.send({status:"Ok", data});
+        // });
+    }catch (error){
+        res.send({ status: "error", data: error });
+    }
 })
 
+// Running at port 8000
 app.listen(8000, ()=>{
     console.log("Node js server started");
 })
