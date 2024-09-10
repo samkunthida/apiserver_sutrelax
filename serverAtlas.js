@@ -24,7 +24,7 @@ mongoose
     .connect(mongoUrl)
     .then(() => {
         console.log("Database Connected")
-})
+    })
     .catch((e) => {
         console.log(e);
     });
@@ -37,24 +37,24 @@ const UserLogin = mongoose.model("UserLogin"); // UserLogin Collection
 const User = mongoose.model("User"); // UserDetail Collection
 
 // GET POST
-app.get("/", (req, res)=>{
-        res.send({status: "Started"})
+app.get("/", (req, res) => {
+    res.send({ status: "Started" })
 })
 
 // POST UserLogin & User
-app.post('/registerUser', async(req, res)=>{
-    const {email, password, role} = req.body;
-    const {firstName, lastName, profileImage, dateOfBirth, gender, dateCreatedAccount } = req.body;
-    
-    // Check if there's any email repeat
-    const oldUser = await UserLogin.findOne({email:email});
+app.post('/registerUser', async (req, res) => {
+    const { email, password, role } = req.body;
+    const { firstName, lastName, profileImage, dateOfBirth, gender, dateCreatedAccount } = req.body;
 
-    if(oldUser){
-        return res.send({data: "User already exists"})
+    // Check if there's any email repeat
+    const oldUser = await UserLogin.findOne({ email: email });
+
+    if (oldUser) {
+        return res.send({ data: "User already exists" })
     }
 
     const encryptedPassword = await bcrypt.hash(password, 10)
-
+        
     try {
         const newUser = await User.create({
             firstName: firstName,
@@ -71,61 +71,71 @@ app.post('/registerUser', async(req, res)=>{
             password: encryptedPassword,
             role: "user",
         });
-        res.send({status: "ok", data: "User Created!"})
+        res.send({ status: "ok", data: "User Created!" })
 
-    }catch(error){
+    } catch (error) {
         res.send({ status: "error", data: error });
     }
 })
 
-//POST Login
-app.post("/loginUser", async(req,res)=>{
-    const {email, password} = req.body;
-    const oldUser = await UserLogin.findOne({email: email});
+// POST update user details
+app.post("/updateUserDetails", async (req, res) => {
+    const { email, password, firstName, lastName, profileImage, dateOfBirth, gender, token } = req.body;
 
-    if(!oldUser){
-        return res.send({data: "User doesn't exist!"});
+    try {
+        
+    } catch (err) {
+        
+    }
+});
+
+
+// POST Login
+app.post("/loginUser", async (req, res) => {
+    const { email, password } = req.body;
+    const oldUser = await UserLogin.findOne({ email: email });
+
+    if (!oldUser) {
+        return res.send({ data: "User doesn't exist!" });
     }
 
-    if(await bcrypt.compare(password, oldUser.password)){
-        const token = jwt.sign({email:oldUser.email}, JWT_SECRET);
+    if (await bcrypt.compare(password, oldUser.password)) {
+        const token = jwt.sign({ email: oldUser.email }, JWT_SECRET);
 
-        if(res.status(201)){
-            return res.send({ status:"ok", data: token });
-        }else{
+        if (res.status(201)) {
+            return res.send({ status: "ok", data: token });
+        } else {
             return res.send({ error: "error" })
         }
     }
 });
 
-app.post("/userData", async(req,res)=>{
-    const {token} = req.body;
+
+app.post("/userData", async (req, res) => {
+    const { token } = req.body;
     try {
-        const user = jwt.verify(token,JWT_SECRET)
+        const user = jwt.verify(token, JWT_SECRET)
         const userEmail = user.email;
 
-        const userLogin = await UserLogin.findOne({email: userEmail});
+        const userLogin = await UserLogin.findOne({ email: userEmail });
         if (!userLogin) {
-            return res.send({ status:"error", data: "User not found"})
+            return res.send({ status: "error", data: "User not found" })
         }
 
         const userDetail = await User.findOne({ _id: userLogin.userID });
         if (!userDetail) {
-            return res.send({ status:"error", data: "User details not found"})
+            return res.send({ status: "error", data: "User details not found" })
         }
 
         return res.send({ status: "Ok", data: userDetail });
 
-        // User.findOne({email:userEmail}).then(data=>{
-        //     return res.send({status:"Ok", data});
-        // });
-    }catch (error){
+    } catch (error) {
         res.send({ status: "error", data: error });
     }
 })
 
 // Running at port 8000
-app.listen(8000, ()=>{
+app.listen(8000, () => {
     console.log("Node js server started");
 })
 
