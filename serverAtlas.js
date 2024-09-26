@@ -32,12 +32,14 @@ require('./models/UserLoginModel') // file path /models/UserLoginModel.js
 require('./models/UserDetailModel') // file path /models/UserDetailModel.js
 require('./models/QuoteModel') // file path /models/QuoteModel.js
 require('./models/ArticleModel') // file path /models/ArticleModel.js
+require('./models/AssessmentModel') // file path /models/AssessmentModel.js
 
 // Declare Collections
 const UserLogin = mongoose.model("UserLogin"); // UserLogin Collection
 const User = mongoose.model("User"); // UserDetail Collection
 const Quote = mongoose.model("Quote"); // Quote Collection
 const Article = mongoose.model("Article"); // Article Collection
+const Assessment = mongoose.model("Assessment"); // Assessment Collection
 
 // GET POST
 app.get("/", (req, res) => {
@@ -148,18 +150,29 @@ app.post("/quoteData", async (req, res) => {
 
 app.post("/articleFetch", async (req, res) => {
     try {
-        // Fetch all articles and populate userID (which references the User collection)
-        const articles = await Article.find().populate("userID"); 
+        const articles = await Article.find().populate("userID");
 
-        // Check if no articles are found
         if (!articles || articles.length === 0) {
             return res.status(404).send({ status: "error", data: "No articles found" });
         }
-
-        // Send the articles in the response
         res.status(200).send({ status: "Ok", data: articles });
+
     } catch (error) {
-        // Handle any server errors
+        res.status(500).send({ status: "error", message: error.message });
+    }
+});
+
+app.post("/assessmentFetch", async (req, res) => {
+    try {
+        const assessments = await Assessment.find().populate("userID"); 
+
+        if (!assessments || assessments.length === 0) {
+            return res.status(404).send({ status: "error", data: "No assessments found" });
+        }
+
+        res.status(200).send({ status: "Ok", data: assessments });
+        
+    } catch (error) {
         res.status(500).send({ status: "error", message: error.message });
     }
 });
