@@ -6,7 +6,7 @@ const UserDetailSchema = new mongoose.Schema(
     lastName: String,
     profileImage: String,
     dateOfBirth: Date,
-    gender: { type: String, enum: ["male", "female", "unknown"] },
+    gender: String,
     dateCreatedAccount: Date,
 
     },
