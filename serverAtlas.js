@@ -33,6 +33,8 @@ require('./models/UserDetailModel') // file path /models/UserDetailModel.js
 require('./models/QuoteModel') // file path /models/QuoteModel.js
 require('./models/ArticleModel') // file path /models/ArticleModel.js
 require('./models/AssessmentModel') // file path /models/AssessmentModel.js
+require('./models/PostModel') // file path /models/PostModel.js
+require('./models/UserAssessmentResultModel') // file path /models/UserAssessmentResultModel.js
 
 // Declare Collections
 const UserLogin = mongoose.model("UserLogin"); // UserLogin Collection
@@ -40,6 +42,8 @@ const User = mongoose.model("User"); // UserDetail Collection
 const Quote = mongoose.model("Quote"); // Quote Collection
 const Article = mongoose.model("Article"); // Article Collection
 const Assessment = mongoose.model("Assessment"); // Assessment Collection
+const Post = mongoose.model("Post"); // Post Collection
+const UserAssessmentResult = mongoose.model("UserAssessmentResult"); // UserAssessmentResult Collection
 
 // GET POST
 app.get("/", (req, res) => {
@@ -85,8 +89,8 @@ app.post('/registerUser', async (req, res) => {
 
 // POST update user details
 
-app.post("/updateUserDetails", async (req, res) => {
-    const { token, firstName, lastName } = req.body;
+app.post("/updateUserName", async (req, res) => {
+    const { token, firstName, lastName} = req.body;
     try {
         const user = jwt.verify(token, JWT_SECRET);
         const userEmail = user.email;
@@ -104,6 +108,60 @@ app.post("/updateUserDetails", async (req, res) => {
         // Update user details
         userDetail.firstName = firstName;
         userDetail.lastName = lastName;
+        await userDetail.save();
+
+        return res.send({ status: "Ok", data: userDetail });
+
+    } catch (error) {
+        res.send({ status: "error", data: error.message });
+    }
+});
+
+app.post("/updateUserGender", async (req, res) => {
+    const { token, gender } = req.body;
+    try {
+        const user = jwt.verify(token, JWT_SECRET);
+        const userEmail = user.email;
+
+        const userLogin = await UserLogin.findOne({ email: userEmail });
+        if (!userLogin) {
+            return res.send({ status: "error", data: "User not found" });
+        }
+
+        const userDetail = await User.findOne({ _id: userLogin.userID });
+        if (!userDetail) {
+            return res.send({ status: "error", data: "User details not found" });
+        }
+
+        // Update user details
+        userDetail.gender = gender;
+        await userDetail.save();
+
+        return res.send({ status: "Ok", data: userDetail });
+
+    } catch (error) {
+        res.send({ status: "error", data: error.message });
+    }
+});
+
+app.post("/updateUserDateOfBirth", async (req, res) => {
+    const { token, dateOfBirth } = req.body;
+    try {
+        const user = jwt.verify(token, JWT_SECRET);
+        const userEmail = user.email;
+
+        const userLogin = await UserLogin.findOne({ email: userEmail });
+        if (!userLogin) {
+            return res.send({ status: "error", data: "User not found" });
+        }
+
+        const userDetail = await User.findOne({ _id: userLogin.userID });
+        if (!userDetail) {
+            return res.send({ status: "error", data: "User details not found" });
+        }
+
+        // Update user details
+        userDetail.dateOfBirth = dateOfBirth;
         await userDetail.save();
 
         return res.send({ status: "Ok", data: userDetail });
@@ -148,6 +206,8 @@ app.post("/quoteData", async (req, res) => {
     }
 });
 
+//POST Article
+
 app.post("/articleFetch", async (req, res) => {
     try {
         const articles = await Article.find().populate("userID");
@@ -162,9 +222,43 @@ app.post("/articleFetch", async (req, res) => {
     }
 });
 
+app.post('/articleDetail', async (req, res) => {
+    const { articleId } = req.body;
+
+    try {
+        const article = await Article.findById(articleId).populate("userID", "firstName");
+        if (!article) {
+            return res.status(404).json({ status: "Error", data: "Article not found" });
+        }
+
+        res.status(200).json({ status: "Ok", data: article });
+    } catch (error) {
+        console.error("Error fetching article details:", error);
+        res.status(500).json({ status: "Error", data: "Server error" });
+    }
+});
+
+//POST Post
+
+app.post("/PostFetch", async (req, res) => {
+    try {
+        const posts = await Post.find().populate("userID");
+
+        if (!posts || posts.length === 0) {
+            return res.status(404).send({ status: "error", data: "No posts found" });
+        }
+        res.status(200).send({ status: "Ok", data: posts });
+
+    } catch (error) {
+        res.status(500).send({ status: "error", message: error.message });
+    }
+});
+
+//POST Assessment
+
 app.post("/assessmentFetch", async (req, res) => {
     try {
-        const assessments = await Assessment.find().populate("userID"); 
+        const assessments = await Assessment.find(); 
 
         if (!assessments || assessments.length === 0) {
             return res.status(404).send({ status: "error", data: "No assessments found" });
@@ -177,6 +271,88 @@ app.post("/assessmentFetch", async (req, res) => {
     }
 });
 
+// Fetch data and show on AssessmentChooseScreen.js
+
+app.post("/userAssessmentResultFetch", async (req, res) => {
+    const { userID } = req.body;
+
+    try {
+        const userAssessmentResults = await UserAssessmentResult.find({ userID: userID })
+            .populate("assessmentID", "name");
+
+        if (!userAssessmentResults || userAssessmentResults.length === 0) {
+            return res.status(404).send({ status: "error", data: "No assessment results found" });
+        }
+
+        res.status(200).send({ status: "Ok", data: userAssessmentResults });
+    } catch (error) {
+        console.error("Error fetching user assessment results:", error);
+        res.status(500).send({ status: "error", message: error.message });
+    }
+});
+
+// Send data into UserAssessmentResult from AssessmentQuestionScreen.js
+
+app.post('/sendAssessmentResult', async (req, res) => {
+    const { score, userID, assessmentID } = req.body;
+
+    try {
+        const newResult = await UserAssessmentResult.create({
+            score: score,
+            dateCreated: new Date(),
+            userID: userID,
+            assessmentID: assessmentID,
+        });
+
+        res.status(200).send({ status: 'ok', data: newResult });
+    } catch (error) {
+        console.error('Error saving assessment result:', error);
+        res.status(500).send({ status: 'error', message: 'Failed to save assessment result.' });
+    }
+});
+
+app.post("/userAssessmentHistoryFetch", async (req, res) => {
+    const { userID } = req.body;
+
+    if (!userID) {
+        return res.status(400).send({ status: "error", message: "userID is required" });
+    }
+
+    try {
+        const userAssessmentResults = await UserAssessmentResult.find({ userID: userID })
+            .populate("assessmentID", "title questions");
+
+        if (!userAssessmentResults || userAssessmentResults.length === 0) {
+            return res.status(404).send({ status: "error", data: "No assessment results found" });
+        }
+
+        const formattedResults = userAssessmentResults.map(result => {
+            const assessment = result.assessmentID;
+
+            const maxScore = assessment.questions.reduce((total, question) => {
+                const maxPoint = question.choices ? Math.max(...question.choices.map(choice => choice.point)) : 0;
+                return total + maxPoint; 
+            }, 0);
+
+            return {
+                assessmentTitle: assessment.title,
+                score: result.score,
+                maxScore: maxScore,
+                dateCreated: result.dateCreated,
+            };
+        });
+
+        res.status(200).send({ status: "Ok", data: formattedResults });
+    } catch (error) {
+        console.error("Error fetching user assessment results for userID:", userID, error);
+        res.status(500).send({ status: "error", message: error.message });
+    }
+});
+
+
+
+
+// POST User Data
 
 app.post("/userData", async (req, res) => {
     const { token } = req.body;
