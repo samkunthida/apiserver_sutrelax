@@ -35,6 +35,7 @@ require('./models/ArticleModel') // file path /models/ArticleModel.js
 require('./models/AssessmentModel') // file path /models/AssessmentModel.js
 require('./models/PostModel') // file path /models/PostModel.js
 require('./models/UserAssessmentResultModel') // file path /models/UserAssessmentResultModel.js
+require('./models/VideoModel') // file path /models/VideoModel.js
 
 // Declare Collections
 const UserLogin = mongoose.model("UserLogin"); // UserLogin Collection
@@ -44,6 +45,7 @@ const Article = mongoose.model("Article"); // Article Collection
 const Assessment = mongoose.model("Assessment"); // Assessment Collection
 const Post = mongoose.model("Post"); // Post Collection
 const UserAssessmentResult = mongoose.model("UserAssessmentResult"); // UserAssessmentResult Collection
+const Video = mongoose.model("Video"); // Video Collection
 
 // GET POST
 app.get("/", (req, res) => {
@@ -238,7 +240,38 @@ app.post('/articleDetail', async (req, res) => {
     }
 });
 
-//POST Post
+// POST Video
+app.post("/videoFetch", async (req, res) => {
+    try {
+        const videos = await Video.find().populate("userID");
+
+        if (!videos || videos.length === 0) {
+            return res.status(404).send({ status: "error", data: "No videos found" });
+        }
+        res.status(200).send({ status: "Ok", data: videos });
+
+    } catch (error) {
+        res.status(500).send({ status: "error", message: error.message });
+    }
+});
+
+app.post('/videoDetail', async (req, res) => {
+    const { videoId } = req.body;
+
+    try {
+        const video = await Video.findById(videoId).populate("userID");
+        if (!video) {
+            return res.status(404).json({ status: "Error", data: "Video not found" });
+        }
+
+        res.status(200).json({ status: "Ok", data: video });
+    } catch (error) {
+        console.error("Error fetching video details:", error);
+        res.status(500).json({ status: "Error", data: "Server error" });
+    }
+});
+
+// POST Post
 
 app.post("/PostFetch", async (req, res) => {
     try {
@@ -272,7 +305,7 @@ app.post("/assessmentFetch", async (req, res) => {
 });
 
 // Fetch data and show on AssessmentChooseScreen.js
-
+//Wrong Name: suppose to be assessmentFetch
 app.post("/userAssessmentResultFetch", async (req, res) => {
     const { userID } = req.body;
 
@@ -348,8 +381,6 @@ app.post("/userAssessmentHistoryFetch", async (req, res) => {
         res.status(500).send({ status: "error", message: error.message });
     }
 });
-
-
 
 
 // POST User Data
