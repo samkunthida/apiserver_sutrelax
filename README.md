@@ -4,17 +4,22 @@ API server for SUTRelax Application
 ### Currently
 - [X] Connected with MongoDB by MongoDB Atlas Clound
 - [X] Encrypted & Decryted Password via
-- [x] Created Users Collection both User Login & User Details
+- [X] Created Users Collection both User Login & User Details
+- [X] Assessment Question
+- [X] Assessment User Result
+- [ ] Videos
 - [ ] Articles
 - [ ] Posts
 - [ ] Comments
 
-### To setup project
+Check the structure of my database ...
+
+### To Setup Project
 ```
 npm i install
 ```
 
-### To run the server
+### To Run The Server
 ```
 nodemon serverAtlas
 ```
